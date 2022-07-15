@@ -10,6 +10,8 @@ window.addEventListener('DOMContentLoaded',(event)=>
     document.querySelector(".emp-count").textContent= empPayrollList.length;
     //calling method to add data into the table
     createInnerHtml();
+    //removing item from editEmp, so as to add new item to edit emp for updating items
+    localStorage.removeItem('editEmp');
 });
 //function defined in form of array functions to get data from local storage
 //in array function, ,condition is checked, if particular key (keys are there in local storage and data is added corresponding to it, here our
@@ -116,4 +118,17 @@ const createEmployeePayrollJSON = () => {
       document.querySelector(".emp-count").textContent= empPayrollList.length;
       //showing updated data of local storage
       createInnerHtml();
+  }
+
+  //update method to edit the details of employee payroll
+  const update= (node)=>{
+      //from the array empPayrollList populated while laoding content of page, employee id to be upadated is find out
+      let empPayrollData= empPayrollList.find(empData=>empData._id= node.id);
+      //if emplPayrollData is null, return is applied here and nothing changes
+      if(!empPayrollData) return;
+      //in order to edit details, employee will be redirected to populated employee payroll form
+      //hence creating local storage with different key to print populated employee form afterwords
+      localStorage.setItem('editEmp',JSON.stringify(empPayrollData));
+      //calling employee payroll form
+      window.location.replace(site_properties.emp_payroll_page);
   }
