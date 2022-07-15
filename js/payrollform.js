@@ -77,74 +77,104 @@ window.addEventListener('DOMContentLoaded',(event)=>{
 });
 //calling save function to save values entered through form into obect and object into local storage
 //when submit button is pressed, save method is initiated
-const save=()=>{
+const save=(event)=>{
+    //prevents removing of data, if there is error in name or date
+    event.preventDefault();
+    //if there is error, then form will not be submitted
+    event.stopPropagation();
     try
     {
-        //calling a method create employee payroll which gets the data from form and adds it into employee payroll object which is assigned to 
+        setEmployeePayrollObject(); 
+        createAndUpdateStorage();
+        /*//calling a method create employee payroll which gets the data from form and adds it into employee payroll object which is assigned to 
         //employeepayroll data here
         let employeePayrollData= createEmployeePayroll();
         //passing employeepayrolldata object to create and update storage method to add it into local storage
-        createAndUpdateStorage(employeePayrollData);
+        createAndUpdateStorage(employeePayrollData);*/
+        //once the value is submitted, form is reset to empty.
+        resetForm();
+        //after resetting, moving back to home page.
+        window.location.replace(site_properties.home_page);
     }
     catch(e)
     {
         return;
     }
+    //refactoring the code to populate employee payroll oject defined globally and filling values in employee payroll object instead of
+    //creating the object of employee payroll seperately in create employee payroll 
+  
 }
-//calling function to add data into local storage
-function createAndUpdateStorage(employeePayrollData){
-    
-    //employee payroll list is array of objects of employee payroll data
-    //getting all the data of local storage with key "EmployeePayrollList"
-    //data is returned in form of string which is converted to object using jsonparse, in the form, it was passed initially
+const setEmployeePayrollObject = () => {
+    employeePayrollObj._name = getInputValueById('#name');
+    employeePayrollObj._profilePic = getSelectedValues('[name=profile]').pop();
+    employeePayrollObj._gender = getSelectedValues('[name=gender]').pop();
+    employeePayrollObj._department = getSelectedValues('[name=department]');
+    employeePayrollObj._salary = getInputValueById('#salary');
+    employeePayrollObj._note = getInputValueById('#notes');
+    let date = getInputValueById('#day')+" "+getInputValueById('#month')+" "+
+               getInputValueById('#year') ;
+    employeePayrollObj._startDate = date;
+}
+
+function createAndUpdateStorage()
+{
     let employeePayrollList= JSON.parse(localStorage.getItem("EmployeePayrollList"));
-    //if first element is being added, then employeepayroll list will be undefined, else this condition will satisfy and new employeepayroll data 
-    //will be pushed into employeepayroll list which is array of objects
-    if(employeePayrollList!=undefined)
+
+    if(employeePayrollList)
     {
-        employeePayrollList.push(employeePayrollData);
+        let empPayrollData= employeePayrollList.find(empData=>empData._id==employeePayrollObj._id)
+        if(!empPayrollData)
+        {
+            employeePayrollList.push(createEmployeePayrollData());
+
+        }
+        else
+        {
+            const index= employeePayrollList.map(empData=>empData._id).indexOf(empPayrollData._id);
+            employeePayrollList.splice(index,1,createEmployeePayrollData(empPayrollData._id));
+        }
     }
     else
     {
-        //if first time element is being added, then employeepayrolllist array is created with one element of employeepayroll data 
-        employeePayrollList=[employeePayrollData];
+        employeePayrollList=[createEmployeePayrollData()]
     }
-    //popup showing the data
-    alert(employeePayrollList.toString());
-    //adding data into local storage using method set item and data is added into local storage for key "EmployeePayrollList"
-    //data is added in form of string
-    localStorage.setItem("EmployeePayrollList",JSON.stringify(employeePayrollList));
+    localStorage.setItem("EmployeePayrollList",JSON.stringify(employeePayrollList));   
+}
+const createEmployeePayrollData = (id) => {
+    let employeePayrollData = new EmployeePayrollData();
+    if (!id) employeePayrollData.id = createNewEmployeeId();
+    else employeePayrollData.id = id;
+    setEmployeePayrollData(employeePayrollData);
+    return employeePayrollData;
 }
 
-//method to create employee payroll object from data entered in form and submitted thereafter.
-const createEmployeePayroll=()=>{
-    //creating object of employeepayrolldata
-    let employeePayrollData= new EmployeePayrollData();
-    try
-    {
-        //calling get input value by id method by passing name id and getting value of name and passing it to name property from employee payroll data class
-        employeePayrollData.name= getInputValueById('#name');
+const setEmployeePayrollData = (employeePayrollData) => {
+    try {
+      employeePayrollData.name = employeePayrollObj._name;
+    } catch (e) {
+      setTextValue('.name-error', e);
+      throw e;
     }
-    catch(e)
-    {
-        //if, regex not matched, error is throw, which is set using text content defined in settextvalue method
-        setTextValue('.name-error',e)
+    employeePayrollData.profilePic = employeePayrollObj._profilePic;
+    employeePayrollData.gender = employeePayrollObj._gender;
+    employeePayrollData.department = employeePayrollObj._department;
+    employeePayrollData.salary = employeePayrollObj._salary;
+    employeePayrollData.note = employeePayrollObj._note;
+    try {
+        employeePayrollData.startDate = 
+            new Date(Date.parse(employeePayrollObj._startDate));
+    } catch (e) {
+        setTextValue('.date-error', e);
+        throw e;
     }
-    //as profile pic, gender and dept are checked values, all checked items are find out using getselected values
-    //profile pic, gender will be only one values as there is radio button used and hence pop is used to extract valus
-    //department can be many values and hence array is passed in property of object
-    employeePayrollData.profilePic= getSelectedValues('[name=profile]').pop();
-    employeePayrollData.gender= getSelectedValues('[name=gender]').pop();
-    employeePayrollData.department=getSelectedValues('[name=department]');
-    employeePayrollData.salary= getInputValueById('#salary');
-    employeePayrollData.note=getInputValueById('#notes');
-    //making date string from day,month and year and  parsing to date and passing to startdate of object
-    let date= getInputValueById('#day')+" "+getInputValueById('#month')+" "+getInputValueById('#year');
-    employeePayrollData.startDate= new Date(Date.parse(date));
-    //after adding values, to string method of employeepayrolldata is called and values are printed
     alert(employeePayrollData.toString());
-    //returning object of employeepayroll data class, which is added into local storage in form of string.
-    return employeePayrollData;
+}
+
+const createNewEmployeeId = () => {
+    let empID = localStorage.getItem("EmployeeID");
+    empID = !empID ? 1 : (parseInt(empID)+1).toString();
+    localStorage.setItem("EmployeeID",empID);
+    return empID;
 }
 
 //defining method for selecting values and adding into array

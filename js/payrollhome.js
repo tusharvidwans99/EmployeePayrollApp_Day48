@@ -123,7 +123,7 @@ const createEmployeePayrollJSON = () => {
   //update method to edit the details of employee payroll
   const update= (node)=>{
       //from the array empPayrollList populated while laoding content of page, employee id to be upadated is find out
-      let empPayrollData= empPayrollList.find(empData=>empData._id= node.id);
+      let empPayrollData= empPayrollList.find(empData=>empData._id== node.id);
       //if emplPayrollData is null, return is applied here and nothing changes
       if(!empPayrollData) return;
       //in order to edit details, employee will be redirected to populated employee payroll form
